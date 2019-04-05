@@ -34,24 +34,34 @@ void Distributor::ClientHandler(const client_t &client) {
 
     while (1) {
         ssize_t len = read(fd, &payload, sizeof(payload_t));
-        if (len < 0){
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", client.fd, strerror(errno));
+        if (len < 0) {
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", fd, strerror(errno));
+            break;
+        }
+        if (len == 0) {
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: read() from fd %d returned 0, the client will be remove.\n", fd);
             break;
         }
         if (len < 2) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (packet too small).\n", client.fd);
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (packet too small).\n", fd);
             continue;
         }
 
         if (payload.payload_len != len - 2) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet).\n", client.fd);
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet).\n", fd);
             continue;
         }
 
         DoDistribute(fd, id, (uint8_t *) &payload, len);
     }
 
-    RemoveClient(fd);
+    if(RemoveClient(fd)) {
+        fprintf(stderr, "[WARN] Distributor::ClientHandler: closing fd %d.\n", fd);
+        close(fd);
+    } else {
+        fprintf(stderr, "[CRIT] Distributor::ClientHandler: failed to remove client with fd %d, something is not right.\n", fd);
+        std::terminate();
+    }
 }
 
 void Distributor::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len) {
