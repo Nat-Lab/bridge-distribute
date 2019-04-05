@@ -39,16 +39,16 @@ int main () {
     memcpy(payload.payload, "test", 4);
     payload.payload_len = 4;
     ssize_t len = write(cs1[0], &payload, 6);
-    printf("[INFO] main: client0: wrote %d bytes.\n", len);
+    printf("[INFO] main: client0: wrote %li bytes.\n", len);
 
     // cs2: read
     printf("[INFO] main: client1: reading payload...\n");
     payload_t payload_read;
     len = read(cs2[0], &payload_read, sizeof(payload_t));
-    printf("[INFO] main: client1: read %d bytes, payload length = %d btyes.\n", len, payload_read.payload_len);
+    printf("[INFO] main: client1: read %li bytes, payload length = %d btyes.\n", len, payload_read.payload_len);
 
     if (payload_read.payload_len + 2 != len) {
-        printf("[WARN] main: client1: error, payload length should be %d bytes.\n", len - 2);
+        printf("[WARN] main: client1: error, payload length should be %li bytes.\n", len - 2);
     } else {
         char content[payload_read.payload_len];
         memcpy(&content, payload_read.payload, payload_read.payload_len);
@@ -59,10 +59,10 @@ int main () {
     printf("[INFO] main: client2: reading payload...\n");
     payload_t payload_read_2;
     len = read(cs3[0], &payload_read_2, sizeof(payload_t));
-    printf("[INFO] main: client2: read %d bytes, payload length = %d btyes.\n", len, payload_read_2.payload_len);
+    printf("[INFO] main: client2: read %li bytes, payload length = %d btyes.\n", len, payload_read_2.payload_len);
 
     if (payload_read_2.payload_len + 2 != len) {
-        printf("[WARN] main: client2: error, payload length should be %d bytes.\n", len - 2);
+        printf("[WARN] main: client2: error, payload length should be %li bytes.\n", len - 2);
     } else {
         char content[payload_read_2.payload_len];
         memcpy(&content, payload_read_2.payload, payload_read_2.payload_len);

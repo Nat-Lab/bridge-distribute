@@ -61,8 +61,8 @@ void Distributor::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, si
             ssize_t ret = write(client.fd, buffer, len);
             if (ret < 0)
                 fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: %s.\n", client.fd, strerror(errno));
-            if (ret != len)
-                fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%d) != wrote (%d).\n", client.fd, len, ret);
+            if ((size_t) ret != len)
+                fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", client.fd, len, ret);
         }
     }
 }
