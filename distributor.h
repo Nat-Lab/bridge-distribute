@@ -1,5 +1,6 @@
 #ifndef DIST_H
 #define DIST_H
+
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
@@ -8,16 +9,8 @@
 #include <thread>
 #include <mutex>
 #include <algorithm>
-#define MAX_PAYLOAD 65536
 
-typedef struct payload_t {
-    uint16_t payload_len;
-    uint8_t payload[MAX_PAYLOAD];
-} payload_t;
-
-typedef struct handshake_msg_t {
-    uint8_t id;
-} handshake_msg_t;
+#include "dist-types.h"
 
 typedef struct client_t {
     uint8_t id;
