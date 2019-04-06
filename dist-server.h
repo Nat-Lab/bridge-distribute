@@ -2,6 +2,7 @@
 #define DIST_S_H
 
 #include "distributor.h"
+#include "fd-reader.h"
 #include <thread>
 #include <vector>
 
@@ -18,9 +19,10 @@ protected:
     bool HandleConnect(int fd);
 
 private:
+    virtual ssize_t HandleRead (int fd, void *buf, size_t len);
     virtual void DoStart() = 0;
     virtual void DoStop() = 0;
-    Distributor dis;
+    Distributor<DistributionServer> dis;
     std::vector<std::thread> threads;
     bool running;
 };

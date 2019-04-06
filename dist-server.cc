@@ -2,6 +2,7 @@
 
 DistributionServer::DistributionServer() {
     running = false;
+    dis.SetReader(FdReader<DistributionServer>(&DistributionServer::HandleRead, this));
 }
 
 void DistributionServer::Start () {
@@ -46,3 +47,7 @@ bool DistributionServer::HandleConnect(int fd) {
 }
 
 DistributionServer::~DistributionServer() {}
+
+ssize_t DistributionServer::HandleRead (int fd, void *buf, size_t len) {
+    return read (fd, buf, len);
+}
