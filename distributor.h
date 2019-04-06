@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include "dist-types.h"
+#include "fd-reader.h"
 
 typedef struct client_t {
     uint8_t id;
@@ -22,11 +23,13 @@ public:
     std::thread AddClient(uint8_t id, int client_fd);
     bool RemoveClient(int client_fd);
     const std::vector<client_t>& GetClients();
+    void SetReader (FdReader reader);
 private:
     void ClientHandler(const client_t &client);
     void DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len);
     std::vector<client_t> clients;
     std::mutex mtx;
+    FdReader reader;
 };
 
 #endif // DIST_H

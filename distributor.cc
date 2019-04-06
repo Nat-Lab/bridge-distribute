@@ -33,7 +33,7 @@ void Distributor::ClientHandler(const client_t &client) {
     payload_t payload;
 
     while (1) {
-        ssize_t len = read(fd, &payload, sizeof(payload_t));
+        ssize_t len = reader.Read(fd, &payload, sizeof(payload_t));
         if (len < 0) {
             fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", fd, strerror(errno));
             break;
@@ -75,4 +75,8 @@ void Distributor::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, si
                 fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", client.fd, len, ret);
         }
     }
+}
+
+void Distributor::SetReader (FdReader reader) {
+    this->reader = reader;
 }
