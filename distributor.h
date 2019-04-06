@@ -85,17 +85,17 @@ void Distributor<T>::ClientHandler(const client_t &client) {
     while (1) {
         ssize_t len = reader.Read(fd, &payload, sizeof(payload_t));
         
-        if (!stream) {
-            if (len < 0) {
-                fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", fd, strerror(errno));
-                break;
-            }
-            
-            if (len == 0) {
-                fprintf(stderr, "[WARN] Distributor::ClientHandler: read() from fd %d returned 0, the client will be remove.\n", fd);
-                break;
-            }
+        if (len < 0) {
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", fd, strerror(errno));
+            break;
+        }
+        
+        if (len == 0) {
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: read() from fd %d returned 0, the client will be remove.\n", fd);
+            break;
+        }
 
+        if (!stream) {
             if (len < 2) {
                 fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (packet too small).\n", fd);
                 continue;
