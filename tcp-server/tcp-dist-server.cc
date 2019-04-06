@@ -35,12 +35,21 @@ void TcpDistributionServer::TcpListener() {
     char ip_str[INET_ADDRSTRLEN];
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int nodelay = 1;
 
     if (fd < 0) {
         fprintf(stderr, "[CRIT] TcpDistributionServer::TcpListener: socket(): %s.\n", strerror(errno));
         Stop();
         goto listener_exit;
     }
+    
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(int)) < 0) {
+        fprintf(stderr, "[CRIT] TcpDistributionServer::TcpListener: setsockopt(): %s.\n", strerror(errno));
+
+        Stop();
+        goto listener_exit;
+    }
+
 
     if (bind(fd, (struct sockaddr *) &local_addr, sizeof(struct sockaddr_in)) < 0) {
         fprintf(stderr, "[CRIT] TcpDistributionServer::TcpListener: bind(): %s.\n", strerror(errno));
