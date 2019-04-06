@@ -5,8 +5,8 @@
 
 class FdReader {
 public:
-	virtual ssize_t Read (int fd, void *buf, size_t len);
-	virtual ~FdReader ();
+    virtual ssize_t Read (int fd, void *buf, size_t len);
+    virtual ~FdReader ();
 };
 
 #endif // FD_READ_H
