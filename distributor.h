@@ -21,6 +21,8 @@ typedef struct client_t {
 template <typename T>
 class Distributor {
 public:
+    Distributor (bool stream);
+    Distributor ();
     std::thread AddClient(uint8_t id, int client_fd);
     bool RemoveClient(int client_fd);
     const std::vector<client_t>& GetClients();
@@ -31,7 +33,18 @@ private:
     std::vector<client_t> clients;
     std::mutex mtx;
     FdReader<T> reader;
+    bool stream;
 };
+
+template <typename T>
+Distributor<T>::Distributor (bool stream) {
+    this->stream = stream;
+}
+
+template <typename T>
+Distributor<T>::Distributor () {
+    stream = true;
+}
 
 template <typename T>
 std::thread Distributor<T>::AddClient(uint8_t id, int client_fd) {
@@ -71,22 +84,27 @@ void Distributor<T>::ClientHandler(const client_t &client) {
 
     while (1) {
         ssize_t len = reader.Read(fd, &payload, sizeof(payload_t));
-        if (len < 0) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", fd, strerror(errno));
-            break;
-        }
-        if (len == 0) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: read() from fd %d returned 0, the client will be remove.\n", fd);
-            break;
-        }
-        if (len < 2) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (packet too small).\n", fd);
-            continue;
-        }
+        
+        if (!stream) {
+            if (len < 0) {
+                fprintf(stderr, "[WARN] Distributor::ClientHandler: error reading from fd %d: %s, the client will be remove.\n", fd, strerror(errno));
+                break;
+            }
+            
+            if (len == 0) {
+                fprintf(stderr, "[WARN] Distributor::ClientHandler: read() from fd %d returned 0, the client will be remove.\n", fd);
+                break;
+            }
 
-        if (payload.payload_len != len - 2) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet: payload_len=%d, but pkt_len=%li).\n", fd, payload.payload_len, len);
-            continue;
+            if (len < 2) {
+                fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (packet too small).\n", fd);
+                continue;
+            }
+
+            if (payload.payload_len != len - 2) {
+                fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet: payload_len=%d, but pkt_len=%li).\n", fd, payload.payload_len, len);
+                continue;
+            }
         }
 
         DoDistribute(fd, id, (uint8_t *) &payload, len);
