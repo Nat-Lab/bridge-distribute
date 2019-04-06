@@ -23,6 +23,7 @@ private:
     void DoStop();
     void TcpListener();
     void TcpAcceptHandler(int fd);
+    ssize_t HandleRead (int fd, void *buf, size_t len);
 
     std::thread server_thread;
     struct sockaddr_in local_addr;

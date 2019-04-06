@@ -36,6 +36,8 @@ void TcpDistributionServer::TcpListener() {
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     int nodelay = 1;
+    struct sockaddr_in remote_addr;
+    socklen_t remote_addr_len = sizeof(struct sockaddr_in);
 
     if (fd < 0) {
         fprintf(stderr, "[CRIT] TcpDistributionServer::TcpListener: socket(): %s.\n", strerror(errno));
@@ -63,9 +65,6 @@ void TcpDistributionServer::TcpListener() {
         goto listener_exit;
     }
 
-    struct sockaddr_in remote_addr;
-    socklen_t remote_addr_len;
-
     inet_ntop(AF_INET, &(local_addr.sin_addr), ip_str, INET_ADDRSTRLEN);
 
     fprintf(stderr, "[INFO] TcpDistributionServer::TcpListener: listening %s:%d.\n", ip_str, ntohs(local_addr.sin_port));
@@ -91,4 +90,8 @@ listener_exit:
 void TcpDistributionServer::TcpAcceptHandler (int fd) {
     if(!HandleConnect(fd))
         close(fd);
+}
+
+ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t len) {
+    return read(fd, buf, len);
 }
