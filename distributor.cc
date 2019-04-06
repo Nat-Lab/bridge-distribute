@@ -48,7 +48,7 @@ void Distributor::ClientHandler(const client_t &client) {
         }
 
         if (payload.payload_len != len - 2) {
-            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet).\n", fd);
+            fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet: payload_len=%d, but pkt_len=%li).\n", fd, payload.payload_len, len);
             continue;
         }
 
