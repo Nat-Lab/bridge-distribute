@@ -50,13 +50,13 @@ void Switch::FdUnregister (uint8_t context, int fd) {
     while (fdb_it != fdb.end()) {
         if(fdb_it->GetFd() == fd) {
             auto addr_str = ether_ntoa(fdb_it->GetAddr());
-            fprintf(stderr, "[INFO] Switch::FdRegister: remove fdb: %s @ fd %d (context %d).\n", addr_str, fd, context);
+            fprintf(stderr, "[INFO] Switch::FdUnregister: remove fdb: %s @ fd %d (context %d).\n", addr_str, fd, context);
             fdb.erase (fdb_it);
         } else fdb_it++;
     } 
     mtx_fdb.unlock();
 
-    fprintf(stderr, "[INFO] Switch::FdRegister: unregistered: fd %d @ context %d.\n", fd, context);
+    fprintf(stderr, "[INFO] Switch::FdUnregister: unregistered: fd %d @ context %d.\n", fd, context);
 }
 
 void Switch::DoPortIn (uint8_t context, int fd, const struct ether_header *eth) {
