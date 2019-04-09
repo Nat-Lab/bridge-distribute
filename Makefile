@@ -1,4 +1,4 @@
-CFLAGS=-std=c++11 -O3 -Wall -lpthread
+CFLAGS=-std=c++17 -O3 -Wall -lpthread
 OBJS_TEST=switch.o fdb-entry.o dist-server.o test/dist-server-test.o
 OBJS_TCP=switch.o fdb-entry.o dist-server.o tcp-server/tcp-dist-server.o tcp-server/tcp-server.o
 OBJS_TCPTEST=tcp-test/dist-test_tcp.o

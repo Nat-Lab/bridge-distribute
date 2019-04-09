@@ -85,13 +85,13 @@ std::vector<int> Switch::GetOutPorts (uint8_t context, const struct ether_header
     auto &fdb = GetFdbByContext(context);
     std::vector<int> ports;
 
-    mtx_fdb.lock();
+    mtx_fdb.lock_shared();
     for (auto &fdb_entry : fdb) {
         if (fdb_entry.DestinationIs((struct ether_addr *) eth->ether_dhost))
             ports.push_back(fdb_entry.GetFd());
             
     }
-    mtx_fdb.unlock();
+    mtx_fdb.unlock_shared();
 
     return ports;
 }

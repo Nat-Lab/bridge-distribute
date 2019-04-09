@@ -7,7 +7,7 @@
 #include <string.h>
 #include <vector>
 #include <thread>
-#include <mutex>
+#include <shared_mutex>
 #include <algorithm>
 
 #include "dist-types.h"
@@ -39,7 +39,7 @@ private:
     void ClientHandler(const client_t &client);
     void DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len);
     std::vector<client_t> clients;
-    std::mutex mtx;
+    std::shared_mutex mtx;
     FdReader<T> reader;
     DistributorMode mode;
     Switch m_switch;
@@ -142,6 +142,7 @@ void Distributor<T>::ClientHandler(const client_t &client) {
 template <typename T>
 void Distributor<T>::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len) {
     // FIXME: mutex?
+    mtx.lock_shared();
     if (mode != DistributorMode::SWITCH) {
         for (auto &client : clients) {
             if (client.id == id && fd_src != client.fd) {
@@ -152,6 +153,7 @@ void Distributor<T>::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer,
                     fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", client.fd, len, ret);
             }
         }
+        mtx.unlock_shared();
         return;
     }
 
@@ -164,6 +166,7 @@ void Distributor<T>::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer,
         if ((size_t) ret != len)
             fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", fd, len, ret);
     }
+    mtx.unlock_shared();
 }
 
 template <typename T>

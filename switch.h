@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <mutex>
+#include <shared_mutex>
 
 #include "fdb-entry.h"
 
@@ -26,8 +26,8 @@ private:
     std::vector<FdbEntry>& GetFdbByContext (uint8_t context);
     std::map<uint8_t, std::vector<int>> fds_map;
     std::map<uint8_t, std::vector<FdbEntry>> fdb_map;
-    std::mutex mtx_fds;
-    std::mutex mtx_fdb;
+    std::shared_mutex mtx_fds;
+    std::shared_mutex mtx_fdb;
 };
 
 #endif // SWITCH_H
