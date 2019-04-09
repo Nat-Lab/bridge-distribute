@@ -3,7 +3,7 @@
 std::vector<int>& Switch::GetFdsByContext (uint8_t context) {
     mtx_fds.lock();
     if (!fds_map.count(context)) {
-        fprintf(stderr, "[INFO] Switch::GetFdsByContext: fds for fd %d does not exist, create.\n", context);
+        fprintf(stderr, "[INFO] Switch::GetFdsByContext: fds for context %d does not exist, create.\n", context);
         fds_map.insert({context, std::vector<int> ()});
     }
     mtx_fds.unlock();
@@ -13,7 +13,7 @@ std::vector<int>& Switch::GetFdsByContext (uint8_t context) {
 std::vector<FdbEntry>& Switch::GetFdbByContext (uint8_t context) {
     mtx_fdb.lock();
     if (!fdb_map.count(context)) {
-        fprintf(stderr, "[INFO] Switch::GetFdbByContext: fdb for fd %d does not exist, create.\n", context);
+        fprintf(stderr, "[INFO] Switch::GetFdbByContext: fdb for context %d does not exist, create.\n", context);
         fdb_map.insert({context, std::vector<FdbEntry> ()});
     }
     mtx_fdb.unlock();
