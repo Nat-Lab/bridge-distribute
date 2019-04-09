@@ -18,6 +18,7 @@ public:
     int SetBindAddress(const char *addr, in_port_t port);
     void SetQueueLength (int len);
     void JoinServerThread();
+    void SetDistributorMode (DistributorMode mode);
 private:
     void DoStart();
     void DoStop();
@@ -29,4 +30,7 @@ private:
     struct sockaddr_in local_addr;
     bool running;
     int queue_len;
+    DistributorMode mode;
+
+    uint8_t *m_buffer;
 };

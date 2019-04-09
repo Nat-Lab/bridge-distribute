@@ -7,6 +7,8 @@ TcpDistributionServer::TcpDistributionServer() : DistributionServer() {
     local_addr.sin_port = htons(DEFAULT_PORT);
     running = false;
     queue_len = 16;
+    mode = DistributorMode::SWITCH;
+    m_buffer = 0;
     SetDistributorMode (DistributorMode::SWITCH);
 }
 
@@ -21,6 +23,13 @@ void TcpDistributionServer::SetQueueLength(int len) {
 
 void TcpDistributionServer::JoinServerThread () {
     if (server_thread.joinable()) server_thread.join();
+}
+
+void TcpDistributionServer::SetDistributorMode (DistributorMode mode) {
+    if (mode == DistributorMode::SWITCH && m_buffer == 0) m_buffer = (uint8_t *) malloc(sizeof(payload_t));
+    if (mode != DistributorMode::SWITCH && m_buffer != 0) std::free(m_buffer);
+    this->mode = mode;
+    DistributionServer::SetDistributorMode(mode);
 }
 
 void TcpDistributionServer::DoStart() {
@@ -93,7 +102,29 @@ void TcpDistributionServer::TcpAcceptHandler (int fd) {
         close(fd);
 }
 
-ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t len) {
-    // TODO buffer if not in STREAM mode.
-    return read(fd, buf, len);
+ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t outbuf_len) {
+    if (mode != DistributorMode::SWITCH) return read(fd, buf, outbuf_len);
+    payload_t *payload_ptr = (payload_t *) m_buffer;
+
+    ssize_t len = read(fd, m_buffer, 2);
+    if (len != 2) return -1;
+
+    uint16_t payload_len = payload_ptr->payload_len;
+    ssize_t buffered = 0;
+    while (buffered < payload_len) {
+        len = read(fd, (&payload_ptr->payload) + buffered, payload_len - buffered);
+        if (len < 0) return len;
+        buffered += len;
+    }
+
+    if (buffered != payload_len) {
+        fprintf(stderr, "[WARN] TcpDistributionServer::HandleRead: internal error (buffered != payload_len).\n");
+        return -1;
+    }
+
+    if (outbuf_len < payload_len)
+        fprintf(stderr, "[WARN] TcpDistributionServer::HandleRead: out buffer size too small.\n");
+
+    memcpy (buf, m_buffer, outbuf_len);
+    return payload_len + 2;
 }
