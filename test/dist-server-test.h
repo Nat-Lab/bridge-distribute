@@ -3,8 +3,8 @@
 
 class DistributionServerTest : public DistributionServer {
 public:
-	virtual ~DistributionServerTest() {};
+    virtual ~DistributionServerTest() {};
 private:
-	void DoStart();
-	void DoStop();
+    void DoStart();
+    void DoStop();
 };

@@ -14,7 +14,7 @@ int FdbEntry::GetFd (void) const {
 }
 
 const struct ether_addr* FdbEntry::GetAddr (void) const {
-	return &addr;
+    return &addr;
 }
 
 bool FdbEntry::operator== (const FdbEntry &other) const {
