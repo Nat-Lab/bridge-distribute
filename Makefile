@@ -1,6 +1,6 @@
 CFLAGS=-std=c++11 -O3 -Wall -lpthread
-OBJS_TEST=dist-server.o test/dist-server-test.o
-OBJS_TCP=dist-server.o tcp-server/tcp-dist-server.o tcp-server/tcp-server.o
+OBJS_TEST=switch.o fdb-entry.o dist-server.o test/dist-server-test.o
+OBJS_TCP=switch.o fdb-entry.o dist-server.o tcp-server/tcp-dist-server.o tcp-server/tcp-server.o
 OBJS_TCPTEST=tcp-test/dist-test_tcp.o
 TARGETS=dist-server_tcp dist-server_test dist-server_tcp_test
 CC=g++

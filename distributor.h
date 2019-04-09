@@ -12,42 +12,53 @@
 
 #include "dist-types.h"
 #include "fd-reader.h"
+#include "switch.h"
 
 typedef struct client_t {
     uint8_t id;
     int fd;
 } client_t;
 
+typedef enum DistributorMode {
+    STREAM,
+    HUB,
+    SWITCH
+} DistributorMode;
+
 template <typename T>
 class Distributor {
 public:
-    Distributor (bool stream);
+    Distributor (DistributorMode mode);
     Distributor ();
     std::thread AddClient(uint8_t id, int client_fd);
     bool RemoveClient(int client_fd);
     const std::vector<client_t>& GetClients();
     void SetReader (FdReader<T> reader);
+    void SetMode (DistributorMode mode);
 private:
     void ClientHandler(const client_t &client);
     void DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len);
     std::vector<client_t> clients;
     std::mutex mtx;
     FdReader<T> reader;
-    bool stream;
+    DistributorMode mode;
+    Switch m_switch;
 };
 
 template <typename T>
-Distributor<T>::Distributor (bool stream) {
-    this->stream = stream;
+Distributor<T>::Distributor (DistributorMode mode) {
+    this->mode = mode;
 }
 
 template <typename T>
 Distributor<T>::Distributor () {
-    stream = true;
+    mode = DistributorMode::STREAM;
 }
 
 template <typename T>
 std::thread Distributor<T>::AddClient(uint8_t id, int client_fd) {
+    if (mode == DistributorMode::SWITCH)
+        m_switch.FdRegister (id, client_fd);
     client_t new_client;
     new_client.id = id;
     new_client.fd = client_fd;
@@ -62,6 +73,7 @@ bool Distributor<T>::RemoveClient(int client_fd) {
     mtx.lock();
     for (auto client = clients.begin(); client != clients.end(); client++) {
         if (client->fd == client_fd) {
+            m_switch.FdUnregister (client->id, client_fd);
             clients.erase(client);
             mtx.unlock();
             return true;
@@ -95,7 +107,7 @@ void Distributor<T>::ClientHandler(const client_t &client) {
             break;
         }
 
-        if (!stream) {
+        if (mode == DistributorMode::HUB || mode == DistributorMode::SWITCH) {
             if (len < 2) {
                 fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (packet too small).\n", fd);
                 continue;
@@ -105,6 +117,13 @@ void Distributor<T>::ClientHandler(const client_t &client) {
                 fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (malformed packet: payload_len=%d, but pkt_len=%li).\n", fd, payload.payload_len, len);
                 continue;
             }
+
+            if (payload.payload_len < sizeof(struct ether_header)) {
+                fprintf(stderr, "[WARN] Distributor::ClientHandler: invalid packet from fd %d (payload too small).\n", fd);
+                continue;
+            }
+
+            m_switch.DoPortIn(id, fd, (struct ether_header *) payload.payload);
         }
 
         DoDistribute(fd, id, (uint8_t *) &payload, len);
@@ -122,20 +141,38 @@ void Distributor<T>::ClientHandler(const client_t &client) {
 template <typename T>
 void Distributor<T>::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len) {
     // FIXME: mutex?
-    for (auto &client : clients) {
-        if (client.id == id && fd_src != client.fd) {
-            ssize_t ret = write(client.fd, buffer, len);
-            if (ret < 0)
-                fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: %s.\n", client.fd, strerror(errno));
-            if ((size_t) ret != len)
-                fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", client.fd, len, ret);
+    if (mode != DistributorMode::SWITCH) {
+        for (auto &client : clients) {
+            if (client.id == id && fd_src != client.fd) {
+                ssize_t ret = write(client.fd, buffer, len);
+                if (ret < 0)
+                    fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: %s.\n", client.fd, strerror(errno));
+                if ((size_t) ret != len)
+                    fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", client.fd, len, ret);
+            }
         }
+        return;
+    }
+
+    const uint8_t *payload = ((const payload_t *) buffer)->payload;
+    std::vector<int> ports = m_switch.GetOutPorts(id, (struct ether_header *) payload);
+    for (auto fd : ports) {
+        ssize_t ret = write(fd, buffer, len);
+        if (ret < 0)
+            fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: %s.\n", fd, strerror(errno));
+        if ((size_t) ret != len)
+            fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", fd, len, ret);
     }
 }
 
 template <typename T>
 void Distributor<T>::SetReader (FdReader<T> reader) {
     this->reader = reader;
+}
+
+template <typename T>
+void Distributor<T>::SetMode (DistributorMode mode) {
+    this->mode = mode;
 }
 
 #endif // DIST_H

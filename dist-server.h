@@ -16,7 +16,8 @@ public:
     virtual ~DistributionServer();
 
 protected:
-    bool HandleConnect(int fd);
+    bool HandleConnect (int fd);
+    void SetDistributorMode (DistributorMode mode);
 
 private:
     virtual ssize_t HandleRead (int fd, void *buf, size_t len);

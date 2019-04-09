@@ -46,6 +46,10 @@ bool DistributionServer::HandleConnect(int fd) {
     return true;
 }
 
+void DistributionServer::SetDistributorMode (DistributorMode mode) {
+    dis.SetMode(mode);
+}
+
 DistributionServer::~DistributionServer() {}
 
 ssize_t DistributionServer::HandleRead (int fd, void *buf, size_t len) {
