@@ -1,4 +1,5 @@
 #include "tcp-dist-server.h"
+#include <errno.h>
 
 TcpDistributionServer::TcpDistributionServer() : DistributionServer() {
     memset(&local_addr, 0, sizeof(struct sockaddr_in));
@@ -107,7 +108,11 @@ ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t outbuf_len)
     payload_t *payload_ptr = (payload_t *) m_buffer;
 
     ssize_t len = read(fd, m_buffer, 2);
-    if (len != 2) return -1;
+    if (len == 0) return 0;
+    if (len != 2) {
+        errno = EPROTO;
+        return -1;
+    }
 
     uint16_t payload_len = payload_ptr->payload_len;
     ssize_t buffered = 0;
@@ -119,6 +124,7 @@ ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t outbuf_len)
 
     if (buffered != payload_len) {
         fprintf(stderr, "[WARN] TcpDistributionServer::HandleRead: internal error (buffered != payload_len).\n");
+        errno = EIO;
         return -1;
     }
 
