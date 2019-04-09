@@ -7,6 +7,7 @@ TcpDistributionServer::TcpDistributionServer() : DistributionServer() {
     local_addr.sin_port = htons(DEFAULT_PORT);
     running = false;
     queue_len = 16;
+    SetDistributorMode (DistributorMode::SWITCH);
 }
 
 int TcpDistributionServer::SetBindAddress(const char *addr, in_port_t port) {
@@ -93,5 +94,6 @@ void TcpDistributionServer::TcpAcceptHandler (int fd) {
 }
 
 ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t len) {
+    // TODO buffer if not in STREAM mode.
     return read(fd, buf, len);
 }
