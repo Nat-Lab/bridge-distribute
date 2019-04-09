@@ -73,7 +73,8 @@ bool Distributor<T>::RemoveClient(int client_fd) {
     mtx.lock();
     for (auto client = clients.begin(); client != clients.end(); client++) {
         if (client->fd == client_fd) {
-            m_switch.FdUnregister (client->id, client_fd);
+            if (mode == DistributorMode::SWITCH)
+                m_switch.FdUnregister (client->id, client_fd);
             clients.erase(client);
             mtx.unlock();
             return true;
