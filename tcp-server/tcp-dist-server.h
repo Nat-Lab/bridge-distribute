@@ -31,6 +31,4 @@ private:
     bool running;
     int queue_len;
     DistributorMode mode;
-
-    uint8_t *m_buffer;
 };

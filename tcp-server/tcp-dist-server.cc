@@ -9,7 +9,6 @@ TcpDistributionServer::TcpDistributionServer() : DistributionServer() {
     running = false;
     queue_len = 16;
     mode = DistributorMode::SWITCH;
-    m_buffer = 0;
     SetDistributorMode (DistributorMode::SWITCH);
 }
 
@@ -27,8 +26,6 @@ void TcpDistributionServer::JoinServerThread () {
 }
 
 void TcpDistributionServer::SetDistributorMode (DistributorMode mode) {
-    if (mode == DistributorMode::SWITCH && m_buffer == 0) m_buffer = (uint8_t *) malloc(sizeof(payload_t));
-    if (mode != DistributorMode::SWITCH && m_buffer != 0) std::free(m_buffer);
     this->mode = mode;
     DistributionServer::SetDistributorMode(mode);
 }
@@ -104,17 +101,28 @@ void TcpDistributionServer::TcpAcceptHandler (int fd) {
 }
 
 ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t outbuf_len) {
-    if (mode != DistributorMode::SWITCH) return read(fd, buf, outbuf_len);
-    payload_t *payload_ptr = (payload_t *) m_buffer;
+    if (outbuf_len < 2) return 0;
 
-    ssize_t len = read(fd, m_buffer, 2);
-    if (len == 0) return 0;
+    if (mode != DistributorMode::SWITCH) return read(fd, buf, outbuf_len);
+    payload_t *payload_ptr = (payload_t *) buf;
+
+    ssize_t len = read(fd, buf, 2);
+    if (len == 0) {
+        fprintf(stderr, "[INFO] TcpDistributionServer::HandleRead: fd %d closed conncetion.\n", fd);
+        return 0;
+    }
     if (len != 2) {
         errno = EPROTO;
         return -1;
     }
 
     uint16_t payload_len = payload_ptr->payload_len;
+    if (outbuf_len < payload_len) {
+        fprintf(stderr, "[CRIT] TcpDistributionServer::HandleRead: out buffer size too small.\n");
+        errno = EMSGSIZE;
+        return -1;
+    }
+    
     ssize_t buffered = 0;
     while (buffered < payload_len) {
         len = read(fd, (&payload_ptr->payload) + buffered, payload_len - buffered);
@@ -123,14 +131,10 @@ ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t outbuf_len)
     }
 
     if (buffered != payload_len) {
-        fprintf(stderr, "[WARN] TcpDistributionServer::HandleRead: internal error (buffered != payload_len).\n");
+        fprintf(stderr, "[CRIT] TcpDistributionServer::HandleRead: internal error (buffered != payload_len).\n");
         errno = EIO;
         return -1;
     }
 
-    if (outbuf_len < payload_len)
-        fprintf(stderr, "[WARN] TcpDistributionServer::HandleRead: out buffer size too small.\n");
-
-    memcpy (buf, m_buffer, outbuf_len);
     return payload_len + 2;
 }
