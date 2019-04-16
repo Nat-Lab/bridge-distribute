@@ -10,16 +10,16 @@ CC=g++
 all: $(TARGETS)
 
 dist-server_test: $(OBJS_TEST)
-	$(CC) $(CFLAGS) -o dist-server_test $(OBJS_TEST)
+	$(CC) -o dist-server_test $(OBJS_TEST) $(CFLAGS)
 
 dist-server_tcp: $(OBJS_TCP)
-	$(CC) $(CFLAGS) -o dist-server_tcp $(OBJS_TCP)
+	$(CC) -o dist-server_tcp $(OBJS_TCP) $(CFLAGS)
 
 dist-server_tcp_test: $(OBJS_TCPTEST)
-	$(CC) $(CFLAGS) -o dist-server_tcp_test $(OBJS_TCPTEST)
+	$(CC) -o dist-server_tcp_test $(OBJS_TCPTEST) $(CFLAGS)
 
 dist-client_tcp_tap: $(OBJS_TCPTAP)
-	$(CC) $(CFLAGS) -o dist-client_tcp_tap $(OBJS_TCPTAP)
+	$(CC) -o dist-client_tcp_tap $(OBJS_TCPTAP) $(CFLAGS)
 
 %.o: %.cc
 	$(CC) -c -o $@ $< $(CFLAGS)
