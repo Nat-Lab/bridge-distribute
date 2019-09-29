@@ -110,7 +110,7 @@ void print_help (const char *me) {
 
 int main (int argc, char **argv) {
     char *tap_name = (char *) malloc(IFNAMSIZ);
-    char *server_addr = (char *) malloc(12);
+    char *server_addr = (char *) malloc(15);
     in_port_t server_port = 0;
     uint8_t channel = 0;
 
@@ -127,7 +127,7 @@ int main (int argc, char **argv) {
         switch (opt) {
             case 's':
                 s = true;
-                strncpy(server_addr, optarg, 12);
+                strncpy(server_addr, optarg, 15);
                 break;
             case 'p':
                 p = true;

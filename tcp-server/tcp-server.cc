@@ -24,9 +24,9 @@ void print_help (const char *me) {
 int main (int argc, char **argv) {
     DistributorMode dm = DistributorMode::SWITCH;
 
-    char *bind_addr = (char *) malloc(12);
-    memset(bind_addr, 0, 12);
-    memcpy(bind_addr, "0.0.0.0", 12);
+    char *bind_addr = (char *) malloc(15);
+    memset(bind_addr, 0, 15);
+    memcpy(bind_addr, "0.0.0.0", 15);
 
     in_port_t port = 2672;
 
@@ -37,7 +37,7 @@ int main (int argc, char **argv) {
                 print_help (argv[0]);
                 return 0;
             case 'b':
-                strcpy (bind_addr, optarg);
+                strncpy (bind_addr, optarg, 15);
                 break;
             case 'p':
                 port = atoi (optarg);
