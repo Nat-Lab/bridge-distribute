@@ -37,7 +37,7 @@ public:
     void SetMode (DistributorMode mode);
 private:
     void ClientHandler(const client_t &client);
-    void DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len);
+    int DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len);
     std::vector<client_t> clients;
     std::shared_mutex mtx;
     FdReader<T> reader;
@@ -127,7 +127,9 @@ void Distributor<T>::ClientHandler(const client_t &client) {
             m_switch.DoPortIn(id, fd, (struct ether_header *) payload.payload);
         }
 
-        DoDistribute(fd, id, (uint8_t *) &payload, len);
+        if (DoDistribute(fd, id, (uint8_t *) &payload, len) < 0) {
+            break;
+        }
     }
 
     if(RemoveClient(fd)) {
@@ -140,33 +142,46 @@ void Distributor<T>::ClientHandler(const client_t &client) {
 }
 
 template <typename T>
-void Distributor<T>::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len) {
+int Distributor<T>::DoDistribute(int fd_src, uint8_t id, const uint8_t *buffer, size_t len) {
     // FIXME: mutex?
     mtx.lock_shared();
     if (mode != DistributorMode::SWITCH) {
         for (auto &client : clients) {
             if (client.id == id && fd_src != client.fd) {
                 ssize_t ret = write(client.fd, buffer, len);
-                if (ret < 0)
+                if (ret < 0) {
                     fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: %s.\n", client.fd, strerror(errno));
-                if ((size_t) ret != len)
+                    mtx.unlock_shared();
+                    return -1;
+                }
+                if ((size_t) ret != len) {
                     fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", client.fd, len, ret);
+                    mtx.unlock_shared();
+                    return -1;
+                }
             }
         }
         mtx.unlock_shared();
-        return;
+        return 0;
     }
 
     const uint8_t *payload = ((const payload_t *) buffer)->payload;
     std::vector<int> ports = m_switch.GetOutPorts(id, (struct ether_header *) payload);
     for (auto fd : ports) {
         ssize_t ret = write(fd, buffer, len);
-        if (ret < 0)
+        if (ret < 0) {
             fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: %s.\n", fd, strerror(errno));
-        if ((size_t) ret != len)
+            mtx.unlock_shared();
+            return -1;
+        }
+        if ((size_t) ret != len) {
             fprintf(stderr, "[WARN] Distributor::DoDistribute: error writing to fd %d: len (%li) != wrote (%lu).\n", fd, len, ret);
+            mtx.unlock_shared();
+            return -1;
+        }
     }
     mtx.unlock_shared();
+    return 0;
 }
 
 template <typename T>
