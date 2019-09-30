@@ -24,11 +24,7 @@ void print_help (const char *me) {
 int main (int argc, char **argv) {
     DistributorMode dm = DistributorMode::SWITCH;
 
-    char bind_addr[INET_ADDRSTRLEN];
-
-    memset(bind_addr, 0, INET_ADDRSTRLEN);
-    memcpy(bind_addr, "0.0.0.0", INET_ADDRSTRLEN);
-
+    char *bind_addr = nullptr;
     in_port_t port = 2672;
 
     char opt;
@@ -38,7 +34,7 @@ int main (int argc, char **argv) {
                 print_help (argv[0]);
                 return 0;
             case 'b':
-                strncpy (bind_addr, optarg, INET_ADDRSTRLEN);
+                bind_addr = strdup(optarg);
                 break;
             case 'p':
                 port = atoi (optarg);
@@ -62,12 +58,15 @@ int main (int argc, char **argv) {
         }
     }
 
+    if (bind_addr == nullptr) bind_addr = strdup("0.0.0.0");
+
     char *mode_str = (char *) malloc(7);
     memset (mode_str, 0, 7);
     dm_to_str (dm, mode_str, 7);
     fprintf (stderr, "[INFO] starting server at %s:%d, mode %s.\n", bind_addr, port, mode_str);
     TcpDistributionServer server;
     server.SetBindAddress(bind_addr, port);
+    free(bind_addr);
     server.SetDistributorMode(dm);
     server.Start();
     server.JoinServerThread();
