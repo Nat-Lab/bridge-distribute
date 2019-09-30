@@ -31,6 +31,10 @@ int tap_alloc (char *dev_name) {
     int ioctl_ret = ioctl(fd, TUNSETIFF, (void *) &ifr);
     if (ioctl_ret < 0) return ioctl_ret;
 
+    ifr.ifr_flags |= IFF_UP;
+    ioctl_ret = ioctl(socket(AF_INET, SOCK_DGRAM, 0), SIOCSIFFLAGS, &ifr);
+    if (ioctl_ret < 0) return ioctl_ret;
+
     strncpy(dev_name, ifr.ifr_name, IFNAMSIZ);
 
     return fd;
