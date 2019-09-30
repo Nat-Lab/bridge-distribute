@@ -31,7 +31,7 @@ int tap_alloc (char *dev_name) {
     int ioctl_ret = ioctl(fd, TUNSETIFF, (void *) &ifr);
     if (ioctl_ret < 0) return ioctl_ret;
 
-    strcpy(dev_name, ifr.ifr_name);
+    strncpy(dev_name, ifr.ifr_name, IFNAMSIZ);
 
     return fd;
 }
@@ -80,6 +80,7 @@ void tap_to_sock (int tap_fd, int sock_fd) {
             return;
         }
     }
+    free(payload);
     fprintf(stderr, "[CRIT] tap_to_sock: read returned < 0.\n");
 }
 
@@ -105,6 +106,7 @@ void sock_to_tap (int tap_fd, int sock_fd) {
             return;
         }
     }
+    free(payload);
     fprintf(stderr, "[CRIT] sock_to_tap: read returned <= 0.\n");
 }
 
@@ -113,8 +115,8 @@ void print_help (const char *me) {
 }
 
 int main (int argc, char **argv) {
-    char *tap_name = (char *) malloc(IFNAMSIZ);
-    char *server_addr = (char *) malloc(15);
+    char tap_name[IFNAMSIZ];
+    char server_addr[INET_ADDRSTRLEN];
     in_port_t server_port = 0;
     uint8_t channel = 0;
 
@@ -131,7 +133,7 @@ int main (int argc, char **argv) {
         switch (opt) {
             case 's':
                 s = true;
-                strncpy(server_addr, optarg, 15);
+                strncpy(server_addr, optarg, INET_ADDRSTRLEN);
                 break;
             case 'p':
                 p = true;
