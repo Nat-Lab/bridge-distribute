@@ -68,7 +68,11 @@ int dist_connect (char *addr, in_port_t port, uint8_t id) {
 void tap_to_sock (int tap_fd, int sock_fd) {
     payload_t *payload = (payload_t *) malloc(sizeof(payload_t));
     ssize_t len, wr_len;
-    while ((len = read(tap_fd, &(payload->payload), 65536)) > 0) {
+    while ((len = read(tap_fd, &(payload->payload), 65536)) >= 0) {
+        if (len == 0) {
+            fprintf(stderr, "[WARN] tap_to_sock: read from tap ret 0, is tap up?\n");
+            continue;
+        }
         payload->payload_len = len;
         wr_len = write(sock_fd, payload, (size_t) len + 2);
         if (wr_len != len + 2) {
@@ -76,7 +80,7 @@ void tap_to_sock (int tap_fd, int sock_fd) {
             return;
         }
     }
-    fprintf(stderr, "[CRIT] tap_to_sock: read returned <= 0.\n");
+    fprintf(stderr, "[CRIT] tap_to_sock: read returned < 0.\n");
 }
 
 void sock_to_tap (int tap_fd, int sock_fd) {
@@ -93,8 +97,8 @@ void sock_to_tap (int tap_fd, int sock_fd) {
         }
         wr_len = write(tap_fd, payload_ptr, buffered);
         if (wr_len < 0) {
-            fprintf(stderr, "[CRIT] sock_to_tap: read returned <= 0.\n");
-            return;
+            fprintf(stderr, "[WARN] sock_to_tap: write returned <= 0 on tap, is tap up?\n");
+            continue;
         }
         if ((size_t) wr_len != buffered) {
             fprintf(stderr, "[CRIT] sock_to_tap: written != buffered.\n");
