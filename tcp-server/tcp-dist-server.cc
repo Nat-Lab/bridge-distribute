@@ -112,6 +112,7 @@ ssize_t TcpDistributionServer::HandleRead (int fd, void *buf, size_t outbuf_len)
         return 0;
     }
     if (len != 2) {
+        fprintf(stderr, "[INFO] TcpDistributionServer::HandleRead: fd %d read size too small: %d\n", fd, len);
         errno = EPROTO;
         return -1;
     }
